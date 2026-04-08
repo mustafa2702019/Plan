@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 500">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#111827" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="150" cy="470" rx="120" ry="22" fill="#9d4edd" opacity="0.2"/>
+  <circle cx="150" cy="110" r="52" fill="url(#g2)"/>
+  <path d="M85 180 Q150 140 215 180 L230 390 Q150 440 70 390 Z" fill="url(#g2)"/>
+  <rect x="62" y="220" width="35" height="120" rx="18" fill="url(#g2)"/>
+  <rect x="203" y="220" width="35" height="120" rx="18" fill="url(#g2)"/>
+  <text x="150" y="455" text-anchor="middle" font-family="Arial" font-size="18" fill="#d8b4fe">JINWOO</text>
+</svg>

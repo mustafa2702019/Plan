@@ -4,6 +4,7 @@ import { Settings, X } from 'lucide-react';
 import { useAppStore } from '@/store';
 import type { ThemeType } from '@/types';
 import { setCharacterAsset } from '@/lib/characterAssets';
+import { sendSystemNotification } from '@/utils/notifications';
 
 export function SettingsPanel({ floating = true }: { floating?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -55,6 +56,17 @@ export function SettingsPanel({ floating = true }: { floating?: boolean }) {
               </div>
 
               <div className="space-y-2">
+                <p className="text-xs text-[var(--text-muted)]">Hunter Name</p>
+                <input
+                  type="text"
+                  value={profile.username}
+                  onChange={(e) => void updateProfileSettings({ username: e.target.value.trimStart() })}
+                  placeholder="Hunter name"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <p className="text-xs text-[var(--text-muted)]">Theme</p>
                 <div className="flex gap-2">
                   {(['cote', 'solo-leveling', 'hybrid'] as ThemeType[]).map((theme) => (
@@ -103,13 +115,7 @@ export function SettingsPanel({ floating = true }: { floating?: boolean }) {
               <button
                 className="px-3 py-2 rounded-lg bg-[var(--secondary)]/20 text-[var(--secondary)] text-xs"
                 onClick={async () => {
-                  if (!('Notification' in window)) return;
-                  if (Notification.permission === 'default') {
-                    await Notification.requestPermission();
-                  }
-                  if (Notification.permission === 'granted') {
-                    new Notification('Hybrid System', { body: 'Notifications are active.' });
-                  }
+                  await sendSystemNotification('Hybrid System', 'Notifications are active.');
                 }}
               >
                 Test Notification

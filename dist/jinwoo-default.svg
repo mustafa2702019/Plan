@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960">
   <defs>
     <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
@@ -21,3 +22,28 @@
   <path d="M210 590 C260 630,460 630,510 590 L560 800 C500 840,220 840,160 800 Z" fill="#111827"/>
   <path d="M95 830 C200 780,520 780,625 830" stroke="#7c3aed" stroke-opacity="0.6" stroke-width="10" fill="none"/>
 </svg>
+=======
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#080815"/>
+      <stop offset="100%" stop-color="#030309"/>
+    </linearGradient>
+    <radialGradient id="aura" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="720" height="960" fill="url(#bg2)"/>
+  <ellipse cx="360" cy="350" rx="280" ry="260" fill="url(#aura)"/>
+  <path d="M215 300 C250 185,470 185,505 300 C505 430,440 515,360 515 C280 515,215 430,215 300 Z" fill="#e5e7eb"/>
+  <path d="M210 300 C245 190,470 175,510 305 C475 245,420 220,360 220 C300 220,245 240,210 300 Z" fill="#111827"/>
+  <circle cx="315" cy="335" r="11" fill="#111827"/>
+  <circle cx="405" cy="335" r="11" fill="#111827"/>
+  <path d="M325 400 Q360 420 395 400" stroke="#6b7280" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M150 860 C190 650,260 560,360 560 C460 560,530 650,570 860 Z" fill="#0b1020"/>
+  <path d="M210 590 C260 630,460 630,510 590 L560 800 C500 840,220 840,160 800 Z" fill="#111827"/>
+  <path d="M95 830 C200 780,520 780,625 830" stroke="#7c3aed" stroke-opacity="0.6" stroke-width="10" fill="none"/>
+</svg>
+>>>>>>> a89fcc41 (Initial app setup and deployment config)

@@ -161,7 +161,7 @@ export function Stats() {
           <span className="text-[var(--text)]"> WINDOW</span>
         </h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Hunter Status Report • Week {currentWeek}
+          Hunter Status Report for {profile?.username || 'Hunter'} • Week {currentWeek}
         </p>
       </motion.header>
 

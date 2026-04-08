@@ -1,5 +1,5 @@
 // Hybrid System: Ayanokoji × Jinwoo - Main App
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store';
 import { db, initializeDatabase } from '@/db';
@@ -18,6 +18,7 @@ import { SystemNotification } from '@/components/SystemNotification';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { THEMES, generateThemeCSS } from '@/themes';
+import { sendSystemNotification } from '@/utils/notifications';
 
 function App() {
   const { 
@@ -36,6 +37,7 @@ function App() {
 
   const [notification, setNotification] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const reminderTimeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -67,11 +69,73 @@ function App() {
   // Show welcome notification on first load
   useEffect(() => {
     if (profile && !isLoading) {
-      setNotification('SYSTEM INITIALIZED. Welcome back, Hunter.');
+      setNotification(`SYSTEM INITIALIZED. Welcome back, ${profile.username}.`);
       const timer = setTimeout(() => setNotification(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [profile, isLoading]);
+
+  // Daily notification scheduler (works while app is installed/open)
+  useEffect(() => {
+    reminderTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    reminderTimeoutsRef.current = [];
+
+    const scheduleNotifications = async () => {
+      if (!profile?.notificationsEnabled || showOnboarding) return;
+      if (!('Notification' in window)) return;
+
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+        } catch {
+          return;
+        }
+      }
+      if (Notification.permission !== 'granted') return;
+
+      const reminderRows = await db.notifications.toArray();
+      const enabled = reminderRows.filter((r) => r.enabled);
+      const titleMap: Record<string, string> = {
+        wake: 'Wake Protocol',
+        training: 'Training Window',
+        observation: 'Observation Drill',
+        journaling: 'System Log',
+        weekly: 'Weekly Deep Drill',
+        mission: 'Mission Checkpoint'
+      };
+
+      enabled.forEach((item) => {
+        const [h, m] = item.time.split(':').map(Number);
+        const now = new Date();
+        const target = new Date();
+        target.setHours(h || 0, m || 0, 0, 0);
+        if (target <= now) {
+          target.setDate(target.getDate() + 1);
+        }
+        const ms = target.getTime() - now.getTime();
+
+        const timeoutId = window.setTimeout(() => {
+          const dayKey = new Date().toISOString().slice(0, 10);
+          const dedupeKey = `hybrid-notified-${item.type}-${dayKey}`;
+          if (localStorage.getItem(dedupeKey)) return;
+          localStorage.setItem(dedupeKey, '1');
+          void sendSystemNotification(
+            `Hybrid System - ${titleMap[item.type] || 'Reminder'}`,
+            `Time for your ${item.type} routine.`
+          );
+        }, ms);
+
+        reminderTimeoutsRef.current.push(timeoutId);
+      });
+    };
+
+    void scheduleNotifications();
+
+    return () => {
+      reminderTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      reminderTimeoutsRef.current = [];
+    };
+  }, [profile?.notificationsEnabled, showOnboarding]);
 
   if (isLoading) {
     return <LoadingScreen />;

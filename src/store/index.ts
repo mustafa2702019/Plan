@@ -10,6 +10,15 @@ import { db, initializeDatabase } from '@/db';
 
 // ==================== STORE STATE ====================
 
+const getProgramWeekRange = (weekNumber: number) => {
+  const programStart = new Date('2024-01-01');
+  const weekStart = new Date(programStart);
+  weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  return { weekStart, weekEnd };
+};
+
 interface AppState {
   // Core data
   profile: UserProfile | null;
@@ -297,8 +306,87 @@ export const useAppStore = create<AppState & AppActions>()(
         
         switch (currentStage) {
           case 1: {
-            // Stage 1: score >= 85% for 2 consecutive weeks
-            shouldAdvance = week1Stats.stageScore >= 85 && week2Stats.stageScore >= 85;
+            // Early graduation (corrected): earliest check at end of Week 5/6,
+            // must pass all consistency + variety checks.
+            const earliestWeekReached = currentWeek >= 5;
+            if (!earliestWeekReached) break;
+
+            const consistencyWeeks =
+              (currentWeek === 5 && week1Stats.weekNumber === 5 && week2Stats.weekNumber === 4) ||
+              (currentWeek >= 6 && week1Stats.weekNumber === 6 && week2Stats.weekNumber === 5) ||
+              (currentWeek > 6 && week1Stats.weekNumber === currentWeek - 1 && week2Stats.weekNumber === currentWeek - 2);
+
+            if (!consistencyWeeks) break;
+
+            const stageScoreOk = week1Stats.stageScore >= 85 && week2Stats.stageScore >= 85;
+            const trainingOk = (week1Stats.metrics.training || 0) >= 90 && (week2Stats.metrics.training || 0) >= 90;
+            const journalingOk = (week1Stats.metrics.journaling || 0) >= 90 && (week2Stats.metrics.journaling || 0) >= 90;
+            const phoneMicroOk =
+              ((week1Stats.metrics.phoneBoundary || 0) >= 80 && (week2Stats.metrics.phoneBoundary || 0) >= 80) &&
+              ((week1Stats.metrics.microSkill || 0) >= 80 && (week2Stats.metrics.microSkill || 0) >= 80);
+            const wakeTrendOk = (week1Stats.metrics.wakeTime || 0) >= 70 && (week2Stats.metrics.wakeTime || 0) >= 70;
+
+            const getDailyObservationAccuracy = async (weekNumber: number) => {
+              const { weekStart, weekEnd } = getProgramWeekRange(weekNumber);
+              const logs = await db.getObservationLogsForDateRange(weekStart, weekEnd);
+              const dailyVerified = logs.filter((log) => !log.isDeepDrill && log.verificationResult !== undefined);
+              const dailyCorrect = dailyVerified.filter((log) => log.verificationResult === 'correct');
+              return dailyVerified.length > 0 ? (dailyCorrect.length / dailyVerified.length) * 100 : 0;
+            };
+
+            const [week1DailyObsAccuracy, week2DailyObsAccuracy] = await Promise.all([
+              getDailyObservationAccuracy(week1Stats.weekNumber),
+              getDailyObservationAccuracy(week2Stats.weekNumber)
+            ]);
+            const dailyObservationAccuracyOk = week1DailyObsAccuracy >= 80 && week2DailyObsAccuracy >= 80;
+
+            const deepObsWeek1 = await db.deepObservations.where('weekNumber').equals(week1Stats.weekNumber).toArray();
+            const deepObsWeek2 = await db.deepObservations.where('weekNumber').equals(week2Stats.weekNumber).toArray();
+            const deepObsAccuracy1 = deepObsWeek1.length > 0
+              ? deepObsWeek1.reduce((sum, item) => sum + item.accuracy, 0) / deepObsWeek1.length
+              : 0;
+            const deepObsAccuracy2 = deepObsWeek2.length > 0
+              ? deepObsWeek2.reduce((sum, item) => sum + item.accuracy, 0) / deepObsWeek2.length
+              : 0;
+            const deepDrillAccuracyOk = deepObsAccuracy1 >= 80 && deepObsAccuracy2 >= 80;
+
+            const { weekStart: week1Start } = getProgramWeekRange(1);
+            const { weekEnd: week5End } = getProgramWeekRange(5);
+            const logsWeeks1to5 = await db.getObservationLogsForDateRange(week1Start, week5End);
+            const uniqueEnvironments = new Set(
+              logsWeeks1to5
+                .map((log) => log.environment?.trim().toLowerCase())
+                .filter((env): env is string => Boolean(env))
+            );
+            const environmentVarietyOk = uniqueEnvironments.size >= 2;
+
+            const dayModesWeeks1to5 = await db.dayModes.where('date').between(week1Start, week5End).toArray();
+            const offDays = dayModesWeeks1to5.filter((mode) => mode.mode === 'red');
+            let offDayRecoveryOk = false;
+            for (const offDay of offDays) {
+              const recoveryDate = new Date(offDay.date);
+              recoveryDate.setDate(recoveryDate.getDate() + 1);
+              const dayStart = new Date(recoveryDate);
+              dayStart.setHours(0, 0, 0, 0);
+              const dayEnd = new Date(recoveryDate);
+              dayEnd.setHours(23, 59, 59, 999);
+              const nextDayCompletions = await db.getCompletionsForDateRange(dayStart, dayEnd);
+              if (nextDayCompletions.some((entry) => entry.completed)) {
+                offDayRecoveryOk = true;
+                break;
+              }
+            }
+
+            shouldAdvance =
+              stageScoreOk &&
+              dailyObservationAccuracyOk &&
+              deepDrillAccuracyOk &&
+              trainingOk &&
+              journalingOk &&
+              phoneMicroOk &&
+              wakeTrendOk &&
+              environmentVarietyOk &&
+              offDayRecoveryOk;
             break;
           }
           case 2: {

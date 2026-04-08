@@ -127,6 +127,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <p className="text-xs text-[var(--text-muted)] mt-1">
                   Stage progression is locked and must be earned by gate criteria.
                 </p>
+                <div className="mt-2 space-y-1 text-[11px] text-[var(--text-muted)]">
+                  <p>Early exit check: end of Week 5 or Week 6.</p>
+                  <p>Need 2 consecutive weeks meeting all thresholds:</p>
+                  <p>- Overall &gt;= 85%, daily observation accuracy &gt;= 80%, deep drill &gt;= 80%</p>
+                  <p>- Training &gt;= 90%, journaling &gt;= 90%, phone & micro-skill &gt;= 80%</p>
+                  <p>- Wake-time &gt;= 70% (trend to 90%)</p>
+                  <p>Weeks 1-5 also require 2+ observation environments and at least one off day with next-day recovery.</p>
+                </div>
               </div>
 
               <div>

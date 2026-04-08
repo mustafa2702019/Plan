@@ -142,6 +142,9 @@ export function Dashboard() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        <p className="text-xs text-[var(--primary)] font-mono mb-1">
+          HUNTER: {profile?.username || 'Hunter'}
+        </p>
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -212,6 +215,23 @@ export function Dashboard() {
           />
         </div>
       </motion.div>
+
+      {stage === 1 && (
+        <motion.div
+          className="glass rounded-xl p-4 mb-4 border border-[var(--primary)]/30"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <h3 className="text-sm font-medium text-[var(--text)] mb-2">Stage 1 Exit Criteria (Early Graduation)</h3>
+          <p className="text-xs text-[var(--text-muted)] mb-1">Earliest exit: end of Week 5 or Week 6.</p>
+          <p className="text-xs text-[var(--text-muted)]">Need 2 consecutive weeks with:</p>
+          <p className="text-xs text-[var(--text-muted)]">- Overall &gt;= 85%, daily observation accuracy &gt;= 80%, deep drill &gt;= 80%</p>
+          <p className="text-xs text-[var(--text-muted)]">- Training &gt;= 90%, journaling &gt;= 90%, phone & micro-skill &gt;= 80%</p>
+          <p className="text-xs text-[var(--text-muted)]">- Wake-time adherence &gt;= 70% (trend toward 90%)</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Variety (Weeks 1-5): 2+ observation environments, and 1+ off day with next-day recovery.</p>
+        </motion.div>
+      )}
 
       {/* XP & Level Card */}
       <motion.div

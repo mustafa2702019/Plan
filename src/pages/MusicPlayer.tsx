@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getCharacterAssets } from '@/lib/characterAssets';
+import { db } from '@/db';
 import { 
   Play, 
   Pause, 
@@ -22,6 +23,7 @@ interface Track {
   name: string;
   artist: string;
   url: string;
+  filePath: string;
   duration: number;
 }
 
@@ -49,11 +51,51 @@ export function MusicPlayer() {
   const currentTrack = tracks[currentTrackIndex];
 
   useEffect(() => {
-    // Load tracks from localStorage
-    const savedTracks = localStorage.getItem('hybrid-system-tracks');
-    if (savedTracks) {
-      setTracks(JSON.parse(savedTracks));
-    }
+    const loadTracks = async () => {
+      const persisted = await db.musicTracks.toArray();
+      if (persisted.length > 0) {
+        setTracks(
+          persisted.map((track) => ({
+            id: track.id,
+            name: track.name,
+            artist: track.artist,
+            filePath: track.filePath,
+            url: track.filePath,
+            duration: track.duration || 0
+          }))
+        );
+        return;
+      }
+
+      // Fallback migration from localStorage (ignore old blob: URLs)
+      const savedTracks = localStorage.getItem('hybrid-system-tracks');
+      if (!savedTracks) return;
+      try {
+        const parsed = JSON.parse(savedTracks) as Track[];
+        const valid = parsed.filter((track) => !track.url.startsWith('blob:'));
+        if (valid.length > 0) {
+          const migrated = valid.map((track) => ({
+            ...track,
+            filePath: track.filePath || track.url,
+            url: track.filePath || track.url
+          }));
+          setTracks(migrated);
+          await db.musicTracks.bulkPut(
+            migrated.map((track) => ({
+              id: track.id,
+              name: track.name,
+              artist: track.artist,
+              duration: track.duration,
+              filePath: track.filePath
+            }))
+          );
+        }
+      } catch {
+        // Ignore invalid legacy data
+      }
+    };
+
+    void loadTracks();
   }, []);
 
   useEffect(() => {
@@ -168,25 +210,44 @@ export function MusicPlayer() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    const newTracks: Track[] = [];
-    Array.from(files).forEach((file) => {
-      const url = URL.createObjectURL(file);
-      newTracks.push({
+    const newTracks = await Promise.all(
+      Array.from(files).map(async (file) => {
+        const dataUrl = await fileToDataUrl(file);
+        return {
         id: crypto.randomUUID(),
         name: file.name.replace(/\.[^/.]+$/, ''),
         artist: 'Unknown Artist',
-        url,
+        filePath: dataUrl,
+        url: dataUrl,
         duration: 0
-      });
-    });
+        } as Track;
+      })
+    );
 
     const updatedTracks = [...tracks, ...newTracks];
     setTracks(updatedTracks);
     localStorage.setItem('hybrid-system-tracks', JSON.stringify(updatedTracks));
+    await db.musicTracks.bulkPut(
+      updatedTracks.map((track) => ({
+        id: track.id,
+        name: track.name,
+        artist: track.artist,
+        duration: track.duration,
+        filePath: track.filePath
+      }))
+    );
   };
 
   const startPomodoro = (minutes: number) => {

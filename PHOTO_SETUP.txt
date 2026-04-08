@@ -1,0 +1,15 @@
+Place your real character photos here with these exact names:
+
+1) ayanokoji-real.jpg
+2) jinwoo-real.jpg
+
+Recommended:
+- Portrait images
+- 720x960 or larger
+- JPG or PNG (if PNG, keep the same names but with .png and update characterAssets.ts)
+
+After adding files:
+- Hard refresh browser (Ctrl+F5)
+- Open Music tab to see them in visualizer
+
+You can still override using Settings -> Upload Ayanokoji Photo / Upload Jinwoo Photo.
